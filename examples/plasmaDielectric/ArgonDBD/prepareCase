@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 cd ${0%/*} || exit 1    # run from this directory
 
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
@@ -45,7 +45,7 @@ touch $(echo "${PWD##*/}").foam
 
 rm -f decomposeParScript
 
-echo -e "#!/bin/sh \ndecomposePar">>decomposeParScript
+echo -e "#!/bin/bash \ndecomposePar">>decomposeParScript
 
 for ((i = 1 ; i <= nDielecReg ; i++))
 do
@@ -56,7 +56,7 @@ chmod +x decomposeParScript
 
 rm -f reconstructParScript
 
-echo -e "#!/bin/sh \nreconstructPar \$@">>reconstructParScript
+echo -e "#!/bin/bash \nreconstructPar \$@">>reconstructParScript
 
 for ((i = 1 ; i <= nDielecReg ; i++))
 do
