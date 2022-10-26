@@ -12,7 +12,12 @@ echo
 
 # gcc5.5 (V.Robin)
 mkdir usr
+cd gcc-5.5.0
+patch -p1 < glib.sanitizer.patch
+contrib/download_prerequisites
+cd ..
 mkdir build-gcc && cd build-gcc
+
 # configure gcc-5
 ../gcc-5.5.0/configure -v --build=x86_64-linux-gnu --host=x86_64-linux-gnu  --target=x86_64-linux-gnu --prefix=$WM_PROJECT_DIR/usr/gcc-5.5  --enable-checking=release --enable-languages=c,c++,fortran  --enable-shared --disable-multilib --program-suffix=-5
 # Change 4 to any number based on the available CPU cores
