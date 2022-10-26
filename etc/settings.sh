@@ -117,6 +117,13 @@ unset compilerBin compilerLib
 #compilerInstall=FOAM
 compilerInstall=System
 
+# Load gcc-5 libs
+export GCC_DIR=$WM_PROJECT_DIR/usr/gcc-5.5
+
+[ -d $GCC_DIR/lib ] && _foamAddLib $GCC_DIR/lib
+[ -d $GCC_DIR/lib64 ] && _foamAddLib $GCC_DIR/lib64
+[ -d $GCC_DIR/bin ] && _foamAddPath $GCC_DIR/bin
+
 case "${compilerInstall}" in
 FOAM)
     case "$WM_COMPILER" in

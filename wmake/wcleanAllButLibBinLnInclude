@@ -68,4 +68,6 @@ find `find . -depth \( -name "Make.[A-Za-z]*" -o -name Make \) -type d -print` -
 echo "Removing misc files"
 find . \( -name exe -o -name log -o -name so_locations \) -exec rm {} \;
 
+( cd tutorials && ./Allclean )
+
 #------------------------------------------------------------------------------

@@ -88,8 +88,8 @@ esac
 if [ "$WM_PROJECT" ]
 then
     for i in \
-        $(pwd)/../.$WM_PROJECT/$WM_PROJECT_VERSION \
-        $(pwd)/../.$WM_PROJECT \
+        $HOME/.$WM_PROJECT/$WM_PROJECT_VERSION \
+        $HOME/.$WM_PROJECT \
         $WM_PROJECT_DIR/etc \
         ;
     do

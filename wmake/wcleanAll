@@ -43,7 +43,7 @@ fi
     exit 1
 }
 
-for dir in lib bin/$WM_OPTIONS wmake/bin
+for dir in lib applications/bin
 do
     echo "Removing $dir/"
     [ -d $dir ] && rm -rf $dir/*
@@ -60,5 +60,7 @@ find . -depth -type d \( -name lnInclude -o -name ii_files -o -name Templates.DB
 
 echo "Removing misc files"
 find . \( -name exe -o -name log -o -name so_locations \) -exec rm {} \;
+
+( cd tutorials && ./Allclean )
 
 #------------------------------------------------------------------------------
