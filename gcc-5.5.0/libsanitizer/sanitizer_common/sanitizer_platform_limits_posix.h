@@ -198,8 +198,7 @@ namespace __sanitizer {
     unsigned long long __unused1;
     unsigned long long __unused2;
 #else
-    unsigned short mode;
-    unsigned short __pad1;
+    unsigned int mode;
     unsigned short __seq;
     unsigned short __pad2;
 #if defined(__x86_64__) && !defined(_LP64)
@@ -233,7 +232,7 @@ namespace __sanitizer {
     unsigned long shm_nattch;
     unsigned long __glibc_reserved1;
     unsigned long __glibc_reserved2;
-  #else    
+  #else
   #ifndef __powerpc__
     uptr shm_segsz;
   #elif !defined(__powerpc64__)

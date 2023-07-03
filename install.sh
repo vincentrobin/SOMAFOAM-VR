@@ -2,8 +2,11 @@
 
 #
 # AVANT INSTALLATION : VERIFIER QUE LES INSTALLATIONS DE BASE UBUNTU SONT FAITES
+# PREREQUIS : 
 # voir install_ubuntu_PRE-SOMAFOAM.sh
-#
+# 
+# to run this script
+# ./install.sh > install.out 2>erreur-install.out &
 #
 
 cd ${0%/*} || exit 1    # run from this directory
