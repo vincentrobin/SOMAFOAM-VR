@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#
+# AVANT INSTALLATION : VERIFIER QUE LES INSTALLATIONS DE BASE UBUNTU SONT FAITES
+# voir install_ubuntu_PRE-SOMAFOAM.sh
+#
+#
+
 cd ${0%/*} || exit 1    # run from this directory
 
 #commande a faire la premiere fois seulement (ca marche rarement du premier coup...)
