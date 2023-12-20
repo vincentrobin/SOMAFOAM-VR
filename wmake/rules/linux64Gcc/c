@@ -2,7 +2,7 @@
 
 cWARN        = -Wall
 
-cc          = $(WM_CC) -m64
+cc          = gcc -m64
 
 include $(RULES)/c$(WM_COMPILE_OPTION)
 

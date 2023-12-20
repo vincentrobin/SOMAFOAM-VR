@@ -41,11 +41,11 @@ int main(int argc, char *argv[])
 
 	//Info << "Done " << endl;
 
-    lduMatrix::debug = 0;
+    //lduMatrix::debug = 0;
 
-	coupledLduMatrix::debug = 0;
+	//coupledLduMatrix::debug = 0;
 
-	blockLduMatrix::debug = 0;
+	//blockLduMatrix::debug = 0;
 	
 
 	if (solutionDomain == "plasmaDielectric")
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
 				eps.write();
 
-				E.write();
+				//E.write();
 
 				surfC.write();
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
 			    forAll(composition.Y(), i)
 			    {
-					volScalarField specN
+					/*volScalarField specN
 					(
 						IOobject
 						(
@@ -144,7 +144,8 @@ int main(int argc, char *argv[])
 						mspm().N(i),
 						Y[i].boundaryField().types()
 					);
-					specN.write();
+					specN.write();*/
+					mspm().N(i).write();
 			    }
 		    }
 		}
@@ -163,16 +164,46 @@ int main(int argc, char *argv[])
 		    while (pimple.loop())
 		    {
 			
-			#include "solvePoisson.H"
-			#include "plasmaEqn.H"
+			/*while (pimple.correct())
+			{
+				#include "solvePoisson.H"	
+			}*/
+
+		    while (pimple.correct())
+		    {
+		   		#include "solvePoisson.H" 	
+		    }
+		    
+
+			#include "plasmaEqn.H"	
+			
+			
+			
 
 		    }
+
+		    //pem.ecorrect(chemistry, E);	
+
+	//Info << "Te corrected " << endl;
+
+	
+
+
+			gradTe = mspm().gradTe();
 			
 			
 
-		    scalar Cofactor = mspm().divFe();
+		    scalar Cofactor1 = mspm().divFe();
+      
+        scalar Cofactor2 = pem.ecorrect(chemistry, E);
+            
+        scalar Cofactor = max(Cofactor1,Cofactor2);
 
-		    //Info << "Courant = " << Cofactor << endl;
+		    Info << "Cofactor1 = " << Cofactor1 << endl;
+            
+        Info << "Cofactor2 = " << Cofactor2 << endl;
+        
+        Info << "Cofactor = " << Cofactor << endl;
 
 		    scalar deltaTNew = MaxCo/(Cofactor+1e-10);
 
@@ -182,9 +213,9 @@ int main(int argc, char *argv[])
 
 		    runTime.setDeltaT(deltaTNew);
 
-		    //Info << "New timestep = " << runTime.deltaTValue() << endl;
+		    Info << "New timestep = " << runTime.deltaTValue() << endl;
 
-		    //Info << "Courant = " << Cofactor*runTime.deltaTValue() << endl;
+		    Info << "Courant = " << Cofactor*runTime.deltaTValue() << endl;
 
 		    if (runTime.write() && restartCapabale)
 		    {   
@@ -208,10 +239,10 @@ int main(int argc, char *argv[])
 							runTime.timeName(),
 							mesh
 						),
-						mspm().N(i),
-						Y[i].boundaryField().types()
+						mspm().N(i)
 					);
 					specN.write();
+					//mspm().N(i).write();
 				}
 		    }
 		}

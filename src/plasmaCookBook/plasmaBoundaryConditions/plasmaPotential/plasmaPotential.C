@@ -27,6 +27,7 @@ plasmaPotential
     modelName_("directCurrent"),
     frequency_(0.0),
     bias_(0.0)
+   // sigma_(0.0)
 {}
 
 
@@ -43,6 +44,7 @@ plasmaPotential
     modelName_(dict.lookupOrDefault<word>("model", "directCurrent")),
     frequency_(dict.lookupOrDefault<scalar>("frequency", 0.0)),
     bias_(dict.lookupOrDefault<scalar>("bias", 0.0))
+    //sigma_(dict.lookupOrDefault<scalar>("sigma", 0.0))
 {
     if (dict.found("value"))
     {
@@ -70,7 +72,8 @@ plasmaPotential
     amplitude_(ptf.amplitude_, mapper),
     modelName_(ptf.modelName_),
     frequency_(ptf.frequency_),
-    bias_(ptf.bias_)
+     bias_(ptf.bias_)
+    
 {}
 
 
@@ -85,6 +88,7 @@ plasmaPotential
     modelName_(tppsf.modelName_),
     frequency_(tppsf.frequency_),
     bias_(tppsf.bias_)
+    //sigma_(tppsf.bias_) // Modfif
 {}
 
 
@@ -100,6 +104,7 @@ plasmaPotential
     modelName_(tppsf.modelName_),
     frequency_(tppsf.frequency_),
     bias_(tppsf.bias_)
+    //sigma_(tppsf.bias_) // Modfif
 {}
 
 
@@ -146,8 +151,40 @@ void Foam::plasmaPotential::updateCoeffs()
     }
     else if (modelName_ == "sinFrequencyModulated")
     {
-        operator==(amplitude_*Foam::sin(2*mathematicalConstant::pi*frequency_*this->db().time().value()) + bias_);
+    
+       operator==(amplitude_*Foam::sin(2*mathematicalConstant::pi*frequency_*this->db().time().value()) + bias_); //initial condition for sinsoidal variation
+      
+	//scalar sigma = 100 e-9 ; ok
+	//operator==(amplitude_ * Foam::exp(-Foam::pow(this->db().time().value() / (2.0 * sigma), 2.0)) + bias_); // fonction qui marche
+
+
     }
+        
+    else if (modelName_ == "GaussianFunc")
+{
+    /*scalar startTime; 
+    scalar t = this->db().time().value();
+    scalar sigma = 100.0e-9 / (2.0 * Foam::sqrt(2.0 * Foam::log(2.0)));
+    scalar t0 =  startTime = 20e-9 ; /* définir le centre de la gaussienne */;
+   // scalar bias = 0/* définir  biais */;
+   // scalar amplitude = 500/* définir l'amplitude */;
+    
+//operator==(amplitude * Foam::exp(-Foam::pow((t - t0) / (2.0 * sigma), 2.0)) + bias);
+//scalar sigma = 100.0e-9 / (2.0 * Foam::sqrt(2.0 * Foam::log(2.0)));
+    scalar t0 = 20e-9 ;
+    scalar sigma = 1.0e-9;
+    scalar t = this->db().time().value();
+ operator==(amplitude_*Foam::exp(-Foam::pow((t - t0) / (2.0 * sigma), 2.0))  + bias_);
+}
+
+
+
+
+else if (modelName_ == "Crenau")
+{
+    
+}
+
     else
     {
         FatalErrorIn

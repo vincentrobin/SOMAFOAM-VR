@@ -92,7 +92,11 @@ class ODEChemistryModel
 
         scalarField eChemSource_;
 
+        scalarField dEChemSourceDTe_;
+
         PtrList<scalarField> collFreq_;
+
+        PtrList<scalarField> dRRDi_;
 
 
     // Private Member Functions
@@ -193,6 +197,10 @@ public:
             inline tmp<volScalarField> RR(const label i) const;
 
             inline tmp<volScalarField> eChemSource() const;
+
+            inline tmp<volScalarField> dEChemSourceDTe() const;
+
+            inline tmp<volScalarField> dRRDi(const label i) const;
 
             //- Solve the reaction system for the given start time and time
             //  step and return the characteristic time

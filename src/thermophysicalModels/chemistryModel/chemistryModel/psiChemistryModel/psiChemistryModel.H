@@ -137,6 +137,8 @@ public:
 
 		virtual tmp<volScalarField> eChemSource() const = 0;
 
+        virtual tmp<volScalarField> dEChemSourceDTe() const = 0;
+
 		virtual tmp<volScalarField> eChemSourceExplicit() const = 0;
 };
 

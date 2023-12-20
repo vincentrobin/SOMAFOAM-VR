@@ -1,3 +1,0 @@
-PFLAGS     = -DOMPI_SKIP_MPICXX
-PINC       = $(OPENMPI_COMPILE_FLAGS)
-PLIBS      = -L$(MPI_ARCH_PATH)/lib/openmpi -lmpi

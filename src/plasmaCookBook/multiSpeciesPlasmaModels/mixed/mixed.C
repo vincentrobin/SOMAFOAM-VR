@@ -133,11 +133,6 @@ inline void Foam::mixed<ThermoType>::updateFlux
 
 	//Info << "inside " << endl;
 
-	if (restartcapabale && runTime_.write())
-	{
-		Fi.write();
-	}
-
 	//Info << "exiting updateFlux " << endl;
 }
 
@@ -414,9 +409,7 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
     multivariateSurfaceInterpolationScheme<scalar>::fieldTable& fields
 )
 {
-	updateTemperature();
-
-	updateChemistryCollFreq(chemistry);
+	
 
 	//Info << "Step 1" << endl;
 
@@ -427,7 +420,7 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 		EON.correctBoundaryConditions();
 	}
 
-
+	scalar initialResidual = 1.0;
 	
     volScalarField yt = 0.0*thermo_.composition().Y(0);
 
@@ -463,18 +456,6 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 						updateFlux(i, E);
 
 						const volScalarField& Ti = T_[i];
-
-						//tmp<fvScalarMatrix> yEqn
-						//(   
-						//	fvm::ddt(thermo_.rho(),yi)
-					   	//	+ fvm::div((fvc::interpolate(F_[i]) & mesh_.Sf()), yi, "div(F,Yi)")
-						//	- fvm::laplacian((thermo_.rho()*D_[i]), yi, "laplacian(D,Yi)")
-						//	- fvc::laplacian((thermo_.rho()*mu_[i]*plasmaConstants::KBE*yi), Ti, "laplacian(D,T)")
-						//	+ fvm::SuSp((-Sy_[i]/yi), yi)
-						//);
-
-
-
 						tmp<fvScalarMatrix> NEqn
 						(   
 							fvm::ddt(Ni)
@@ -482,20 +463,12 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 							- fvm::laplacian(D_[i], Ni, "laplacian(D,Ni)")
 							- fvc::laplacian((mu_[i]*plasmaConstants::KBE*Ni), Ti, "laplacian(D,T)")
 							+ fvm::SuSp((-Sy_[i]*plasmaConstants::A/W(i)/Ni), Ni)
-						);
-
-			
-
+						);	
 						NEqn->relax();
-
 						NEqn->solve(mesh_.solutionDict().solver("Ni"));
-
 						N_[i].max(1e6);
 
 						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
-
-						//N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
-
 
 						if(diffusionModel_[i] == "einsteinRelation")
 						{
@@ -510,22 +483,20 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 					{
 						updateVelocity(chemistry, E, i);
 
-						tmp<fvScalarMatrix> yEqn
+						tmp<fvScalarMatrix> NEqn
 						(   
-							fvm::ddt(thermo_.rho(),yi)
-							+ fvm::div((fvc::interpolate(U_[i]*thermo_.rho()) & mesh_.Sf()),yi, "div(F,Yi)")
-							+ fvm::SuSp((-Sy_[i]/yi), yi)
+							fvm::ddt(Ni)
+							+ fvm::div((fvc::interpolate(U_[i]) & mesh_.Sf()),Ni, "div(U,Ni)")
+							+ fvm::SuSp((-Sy_[i]*plasmaConstants::A/W(i)/Ni), Ni)
 						);
 
-						yEqn->relax();
+						NEqn->relax();
 
-						yEqn->solve(mesh_.solutionDict().solver("Yi"));
-
-						yi.max(0.0);
-
-						N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
+						NEqn->solve(mesh_.solutionDict().solver("Ni"));
 
 						N_[i].max(1e6);
+
+						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
 
 						J_[i] == N_[i]*U_[i];
 					}
@@ -566,12 +537,6 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 					}
 					else
 					{
-						//tmp<fvScalarMatrix> ynEqn
-						//(   
-						//	fvm::ddt(thermo_.rho(),yi)
-						//	- fvm::laplacian((D_[i]*thermo_.rho()),yi, "laplacian(D,Yin)")
-						//	+ fvm::SuSp((-Sy_[i]/yi), yi)
-						//);
 
 						tmp<fvScalarMatrix> NnEqn
 						(   
@@ -581,13 +546,7 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 						);
 
 						NnEqn->relax();
-
 						NnEqn->solve(mesh_.solutionDict().solver("Nin"));
-
-						//yi.max(0.0);
-
-						//N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
-
 						N_[i].max(1e6);
 
 						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
@@ -607,79 +566,74 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 	{
 
 		lduSolverPerformance solverPerf;
+	
 		
 
 		forAll(species(), i)
 		{  
-			scalar initialResidual = 1.0;
-			scalar relativeResidual = 1.0;
+			
+			//scalar relativeResidual = 1.0;
 			if (i != bIndex_ && speciesSolution_[i])
 			{
 				volScalarField& yi = thermo_.composition().Y(i);
 
 				volScalarField& Ni = N_[i] ;
 
+				
+
 				if(transportModel_[i] != "zeroD")
 				{
-					//Info << "Step 2 coming" << endl;
 					transportCoeffInterpolate(i);
-					//Info << "Step 2 done" << endl;
 				}
-
-				//Info << "Step 2 " << endl;
 
 				if (i < activeSpecies_)
 				{
 					if( transportModel_[i] == "driftDiffusion")
 					{
-						//Info << "Step 2a " << i << endl;
 						updateFlux(i, E);
-						//Info << "Step 2b " << i << endl;
-
 						const volScalarField& Ti = T_[i];
+						int icorr = 0;
+
+						N_[i].storePrevIter();
+
+						initialResidual = 1.0;
 						
-
-						//int icorr = 0;
+						while ((initialResidual >= 1e-5) && (icorr++ <= 3))
+						{
 						
-						//while (icorr <= 5){
-						tmp<fvScalarMatrix> NEqn
-						(   
-							fvm::ddt(Ni)
-					   		+ fvm::div((fvc::interpolate(F_[i]) & mesh_.Sf()), Ni, "div(F,Ni)")
-							- fvm::laplacian(D_[i], Ni, "laplacian(D,Ni)")
-							+ fvm::SuSp((-Sy_[i]*plasmaConstants::A/W(i)/Ni), Ni)
-							//-Sy_[i]*plasmaConstants::A/W(i)
-						);
+							tmp<fvScalarMatrix> NEqn
+							(   
+								fvm::ddt(Ni)
+					   			+ fvm::div((fvc::interpolate(F_[i]) & mesh_.Sf()), Ni, "div(F,Ni)")
+								- fvm::laplacian(D_[i], Ni, "laplacian(D,Ni)")
+								- chemistry.RR(i)*plasmaConstants::A/W(i)
+								+ chemistry.dRRDi(i)*Ni
+								- fvm::Sp(chemistry.dRRDi(i),Ni)
+							);
 
-						//- fvc::laplacian((mu_[i]*plasmaConstants::KBE*Ni), Ti, "laplacian(D,T)")
+							//Info << chemistry.dRRDi(i) << endl;
+ 
+							solverPerf = NEqn->solve(mesh_.solutionDict().solver("Ni"));
 
-						//Info << "Step 3a " << i << endl;
+							initialResidual = solverPerf.initialResidual();
 
-						NEqn->relax(); // equation relax
+							//Info << "residual = " << initialResidual << endl;
 
-						//Info << "Step 4 " << endl;
+							//N_[i].max(1e4); // setting min value for active species number density
 
-						solverPerf = NEqn->solve(mesh_.solutionDict().solver("Ni"));
+							yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
 
-						//Info << "relaxing " << endl;
+							updateChemistryCollFreq(chemistry);
+
+						}
 
 						N_[i].relax(); // field relax
 
-						//initialResidual = solverPerf.initialResidual();
-
-						//Info << "Residual = " << initialResidual << endl;
-
-						N_[i].max(1e4); // setting min value for active species number density
-						
-						
-						
-
-
-						
+						N_[i].max(1e4);
 
 						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
 
-						//Info << "All done" << endl;
+						updateChemistryCollFreq(chemistry);
 
 						if(diffusionModel_[i] == "einsteinRelation")
 						{
@@ -688,32 +642,29 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 						else
 						{
 							J_[i] == (-D_[i]*fvc::grad(N_[i]) - plasmaConstants::KBE*mu_[i]*N_[i]*fvc::grad(Ti) + N_[i]*mu_[i]*sign(z_[i])*E);
-							//J_[i] == (-D_[i]*fvc::grad(N_[i]) + N_[i]*mu_[i]*sign(z_[i])*E);
 						}
-						//Info << "Completed " << endl;
+						
 					}
 					else if( transportModel_[i] == "momentum")
 					{
 						updateVelocity(chemistry, E, i);
 
-						tmp<fvScalarMatrix> yEqn
+
+						tmp<fvScalarMatrix> NEqn
 						(   
-							fvm::ddt(thermo_.rho(),yi)
-							+ fvm::div((fvc::interpolate(U_[i]*thermo_.rho()) & mesh_.Sf()),yi, "div(F,Yi)")
-							+ fvm::SuSp((-Sy_[i]/yi), yi)
+							fvm::ddt(Ni)
+							+ fvm::div((fvc::interpolate(U_[i]) & mesh_.Sf()),Ni, "div(U,Ni)")
+							+ fvm::SuSp((-Sy_[i]*plasmaConstants::A/W(i)/Ni), Ni)
 						);
 
-						yEqn->relax();
+						NEqn->solve(mesh_.solutionDict().solver("Ni"));
 
-						yEqn->solve(mesh_.solutionDict().solver("Yi"));
+						N_[i].max(1e6);
 
-						
-
-						N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
-
-						N_[i].max(1e4);
+						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
 
 						J_[i] == N_[i]*U_[i];
+
 					}
 					else if( transportModel_[i] == "zeroD")
 					{
@@ -749,48 +700,74 @@ inline Foam::scalar Foam::mixed<ThermoType>::correct
 					else
 					{
 
-						tmp<fvScalarMatrix> NnEqn
-						(   
-							fvm::ddt(Ni)
-							- fvm::laplacian(D_[i],Ni, "laplacian(D,Nin)")
-							+ fvm::SuSp((-Sy_[i]*plasmaConstants::A/W(i)/Ni), Ni)
-						);
 
-						//Info << "equations setting up " << endl;
+						int icorr = 0;
 
-						NnEqn->relax();
+						initialResidual = 1.0;
 
-						//Info << "relaxing " << endl ;
+						N_[i].storePrevIter();
+						
+						while ((initialResidual >= 1e-5) && (icorr++ <= 1))
+						{
+							tmp<fvScalarMatrix> NnEqn
+							(   
+								fvm::ddt(Ni)
+							  - fvm::laplacian(D_[i],Ni, "laplacian(D,Nin)")
+							  - chemistry.RR(i)*plasmaConstants::A/W(i)
+							  + chemistry.dRRDi(i)*Ni
+							  - fvm::Sp(chemistry.dRRDi(i),Ni)
+							);
 
-						NnEqn->solve(mesh_.solutionDict().solver("Nin"));
+							//Info << "icorr = " << icorr << endl;
 
-						//Info << "solving " << endl;
-						//yi.max(0.0);
+							//Info << Ni << endl;
 
-						//N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
+							solverPerf = NnEqn->solve(mesh_.solutionDict().solver("Nin"));
 
-						//Info << "setting max " << endl;
+							//Info << "here 1" << endl;
+
+							initialResidual = solverPerf.initialResidual();
+
+							//Info << "here 2" << endl;
+
+							N_[i].max(1e4);
+
+							//Info << "here 3" << endl;
+
+							yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
+
+							//Info << "here 4" << endl;
+
+							updateChemistryCollFreq(chemistry);
+
+							//Info << "here 5" << endl;
+
+						
+						}
+
+						N_[i].relax();
+
+						//Info << "here 6" << endl;
 
 						N_[i].max(1e4);
 
 						yi = N_[i]*W(i)/thermo_.rho()/plasmaConstants::A;
 
-						//Info << "Done with heavy species " << endl;
-
-						//N_[i] == thermo_.rho()*(thermo_.composition().Y(i)*plasmaConstants::A)/W(i);
-
-						//N_[i].max(1e10);
+						updateChemistryCollFreq(chemistry);
 					}
 				}
 		        yt += yi;  
 			}
 		}
 
+
 		volScalarField& yBgas = thermo_.composition().Y()[bIndex_];
 
 		yBgas = scalar(1.0) - yt;
 
 		N_[bIndex_] == thermo_.rho()*thermo_.composition().Y(bIndex_)*plasmaConstants::A/W(bIndex_);
+
+		updateChemistryCollFreq(chemistry);
 	}
     return 0;
 }

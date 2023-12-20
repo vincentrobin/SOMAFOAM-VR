@@ -35,6 +35,12 @@ public fixedValueFvPatchScalarField
     word modelName_;
     scalar frequency_;
     scalar bias_;
+    
+    scalar sigma ;// aded
+    scalar t0 ;    // aded
+    scalar EN_max ;// aded
+    
+    double value_; // aded
     	
   public:
 

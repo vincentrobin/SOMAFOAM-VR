@@ -500,6 +500,10 @@ Foam::scalar Foam::multiSpeciesPlasmaModel::correct
     multivariateSurfaceInterpolationScheme<scalar>::fieldTable& fields
 )
 { 
+	updateTemperature();
+
+	updateChemistryCollFreq(chemistry);
+	
     forAll(Sy_, i)
     {
         Sy_[i] = chemistry.RR(i);
@@ -622,6 +626,61 @@ Foam::multiSpeciesPlasmaModel::electronTempSource
 	if (collisionFrequency_[eIndex_] == "muBased")
 	{
 		pets += (3*plasmaConstants::boltzC*plasmaConstants::eChargeA*(thermo_.Te()-thermo_.T())*N(eIndex_)/mu_[eIndex_]/W(bIndex_));
+	}
+
+    forAll(ets, celli)
+    {
+        ets[celli] = pets[celli];
+    }
+
+    forAll(ets.boundaryField(), patchi)
+    {
+        const fvPatchScalarField& ppets =
+            pets.boundaryField()[patchi];
+
+        fvPatchScalarField& pppets = ets.boundaryField()[patchi];
+
+        forAll(pppets, facei)
+        {
+            pppets[facei] = ppets[facei];
+        }
+    }
+   
+    return tEts;
+}
+
+Foam::tmp<Foam::volScalarField>
+Foam::multiSpeciesPlasmaModel::dElectronTempSourceDTe
+(
+	const psiChemistryModel& chemistry
+)
+{
+    tmp<volScalarField> tEts
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "dElectronTempSource",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh_,
+            dimensionedScalar("zero", dimensionSet(1, -1, -3, 0, 0), 0.0)
+        )
+    );
+    
+    volScalarField& ets = tEts();
+
+    volScalarField pets = 0.0*ets;
+
+    pets = (chemistry.dEChemSourceDTe()())*plasmaConstants::A/W(eIndex_); 
+
+	if (collisionFrequency_[eIndex_] == "muBased")
+	{
+		pets += (3*plasmaConstants::boltzC*plasmaConstants::eChargeA*N(eIndex_)/mu_[eIndex_]/W(bIndex_));
 	}
 
     forAll(ets, celli)
